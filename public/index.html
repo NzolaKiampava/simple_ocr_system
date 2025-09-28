@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Document AI OCR Demo</title>
+<style>
+body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; }
+.box { border: 1px solid #ddd; padding: 16px; border-radius: 8px; }
+pre { white-space: pre-wrap; word-break: break-word; background: #f7f7f7; padding: 12px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<h1>Document AI OCR — Upload PDF or Image</h1>
+<div class="box">
+<form id="uploadForm">
+<input type="file" name="file" id="fileInput" accept="application/pdf,image/*" required />
+<br /><br />
+<button type="submit">Upload & Analyze</button>
+</form>
+
+
+<h3>Result</h3>
+<div id="result">
+<p>Waiting for upload...</p>
+</div>
+</div>
+
+
+<script>
+const form = document.getElementById('uploadForm');
+const resultDiv = document.getElementById('result');
+
+
+form.addEventListener('submit', async (e) => {
+e.preventDefault();
+const f = document.getElementById('fileInput').files[0];
+if (!f) return alert('Choose a file first');
+
+
+const fd = new FormData();
+fd.append('file', f);
+
+
+resultDiv.innerHTML = '<p>Uploading and analyzing... please wait</p>';
+
+
+try {
+const r = await fetch('/upload', { method: 'POST', body: fd });
+const json = await r.json();
+if (!r.ok) throw new Error(json.error || 'Unknown error');
+
+
+resultDiv.innerHTML = `
+<h4>Extracted text (truncated)</h4>
+<pre>${(json.text || '').slice(0, 2000)}</pre>
+<h4>Pages</h4>
+<pre>${JSON.stringify(json.pages, null, 2)}</pre>
+<h4>Entities</h4>
+<pre>${JSON.stringify(json.entities, null, 2)}</pre>
+<h4>Raw response (full)</h4>
+<pre>${JSON.stringify(json.raw, null, 2).slice(0, 4000)}</pre>
+`;
+} catch (err) {
+resultDiv.innerHTML = `<pre style="color:red">Error: ${err.message}</pre>`;
+}
+});
+</script>
+</body>
+</html>
